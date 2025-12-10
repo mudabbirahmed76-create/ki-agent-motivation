@@ -1,19 +1,23 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from typing import List
 
 app = FastAPI()
 
-class Videoanfrage(BaseModel):
-    Menge: int
-    Thema: str
-    Sprache: str
-    Plattformen: list[str]
+class VideoRequest(BaseModel):
+    amount: int
+    topic: str
+    language: str
+    platforms: List[str]
 
 @app.post("/create-motivation-videos")
-def videos_erstellen(anfrage: Videoanfrage):
+def create_videos(request: VideoRequest):
+    # Placeholder response – later this will trigger your real AI video creation
     return {
-        "status": "erhalten",
-        "Menge": anfrage.Menge,
-        "Thema": anfrage.Thema,
-        "Nachricht": "KI-Server wurde erfolgreich erreicht! Videoproduktion kommt als nächstes."
+        "status": "received",
+        "amount": request.amount,
+        "topic": request.topic,
+        "language": request.language,
+        "platforms": request.platforms,
+        "message": "AI server reached successfully. Video generation comes next."
     }
