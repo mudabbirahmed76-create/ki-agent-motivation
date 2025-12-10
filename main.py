@@ -12,12 +12,11 @@ class VideoRequest(BaseModel):
 
 @app.post("/create-motivation-videos")
 def create_videos(request: VideoRequest):
-    # Placeholder response – later this will trigger your real AI video creation
     return {
         "status": "received",
         "amount": request.amount,
         "topic": request.topic,
         "language": request.language,
         "platforms": request.platforms,
-        "message": "AI server reached successfully. Video generation comes next."
+        "message": "AI server successfully reached! Video generation will start next."
     }
