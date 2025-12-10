@@ -7,15 +7,14 @@ class VideoRequest(BaseModel):
     amount: int
     topic: str
     language: str
-    platforms: list
+    platforms: list[str]
 
 @app.post("/create-motivation-videos")
 def create_videos(request: VideoRequest):
-    # Platzhalter – später kommt hier die echte KI-Videoerstellung rein
+    # Platzhalter – später kommt hier die echte KI-Videogenerierung rein
     return {
         "status": "received",
         "amount": request.amount,
         "topic": request.topic,
-        "message": "KI-Server wurde erfolgreich erreicht! Videoerstellung kommt als nächstes."
+        "message": "KI-Server wurde erfolgreich erreicht! Videoproduktion kommt als nächstes."
     }
-
