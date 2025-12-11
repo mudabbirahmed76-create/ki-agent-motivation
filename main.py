@@ -16,54 +16,30 @@ class VideoRequest(BaseModel):
 
 @app.post("/create-motivation-videos")
 def create_videos(request: VideoRequest):
+
     try:
         # 1. Generate script
         prompt = (
-            f"Write a short, powerful motivational script in {request.language} "
-            f"about the topic: {request.topic}. "
-            f"Make it emotional, inspiring, and impactful."
+            f"Create a motivational script in {request.language} about: {request.topic}. "
+            f"Make it short, powerful, emotional and engaging."
         )
 
-        response = client.chat.completions.create(
+        chat = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}]
         )
 
-        script_text = response.choices[0].message["content"]
+        script_text = chat.choices[0].message.content  # ✔ KORREKT
 
-        # 2. Generate an image
-        image_prompt = f"Cinematic motivational image based on: {request.topic}"
-        img = client.images.generate(
-            model="gpt-image-1",
-            prompt=image_prompt,
-            size="1024x1024"
-        )
-        image_base64 = img.data[0].b64_json
-
-        # 3. Generate a video
-        video_prompt = (
-            f"Create a cinematic motivational video using this script:\n{script_text}\n"
-            f"Use cinematic music, dramatic visuals, and emotional tone."
-        )
-
-        video_response = client.videos.generate(
-            model="gpt-4o-mini-vid",
-            prompt=video_prompt,
-            duration=12,
-            size="1920x1080"
-        )
-
-        video_base64 = video_response.data[0].b64_json
-
-        # 4. Final response
+        # Return only the script for now
         return {
             "status": "success",
             "script": script_text,
-            "image_base64": image_base64,
-            "video_base64": video_base64,
-            "platforms_ready": request.platforms,
-            "message": "Motivational video successfully generated!"
+            "platforms_ready": request.platforms
         }
 
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return {
+            "status": "error",
+            "message": str(e)
+        }
