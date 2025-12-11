@@ -27,11 +27,12 @@ def create_videos(request: VideoRequest):
 
     results = []
 
-    for i in range(request.amount):
+    for _ in range(request.amount):
 
+        # 1. Choose a random topic
         topic = random.choice(MOTIVATION_TOPICS)
 
-        # 1. Create motivational script
+        # 2. Generate script
         script_prompt = (
             f"Create a powerful motivational video script in {request.language} "
             f"about the topic: {topic}. Make it emotional, cinematic, and 20 seconds long."
@@ -44,7 +45,7 @@ def create_videos(request: VideoRequest):
 
         script_text = chat.choices[0].message["content"]
 
-        # 2. Create image
+        # 3. Create thumbnail image
         image_prompt = f"Cinematic motivational scene representing: {topic}"
 
         img = client.images.generate(
@@ -55,9 +56,9 @@ def create_videos(request: VideoRequest):
 
         image_base64 = img.data[0].b64_json
 
-        # 3. Create video
+        # 4. Create video
         video_prompt = (
-            "Create a motivational video with cinematic visuals and music. "
+            "Create a motivational video with cinematic visuals and music.\n"
             f"Use this script:\n{script_text}"
         )
 
@@ -83,9 +84,3 @@ def create_videos(request: VideoRequest):
         "videos_generated": len(results),
         "videos": results
     }
-
-
-# REQUIRED FOR RAILWAY !!!
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000)
