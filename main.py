@@ -1,20 +1,15 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
-import random
-import os
 from openai import OpenAI
+import os
+import random
 
 app = FastAPI()
 
-# Health check for Railway
-@app.get("/")
-def home():
-    return {"status": "running"}
-
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-class VideoRequest(BaseModel):
+class ScriptRequest(BaseModel):
     amount: int
     language: str
     platforms: List[str]
@@ -27,17 +22,23 @@ MOTIVATION_TOPICS = [
     "patience", "focus"
 ]
 
+@app.get("/")
+def home():
+    return {"status": "running"}
+
 @app.post("/create-motivation-scripts")
-def create_scripts(request: VideoRequest):
+def create_scripts(request: ScriptRequest):
+
     results = []
 
     for _ in range(request.amount):
+
         topic = random.choice(MOTIVATION_TOPICS)
 
         prompt = (
-            f"Create a powerful motivational script in {request.language} "
-            f"about the topic: {topic}. "
-            f"Length: 20–30 seconds. Emotional, cinematic style."
+            f"Write a powerful motivational speech in {request.language}. "
+            f"The topic is: {topic}. "
+            f"Length: 20–30 seconds. Emotional cinematic style."
         )
 
         completion = client.chat.completions.create(
@@ -59,7 +60,8 @@ def create_scripts(request: VideoRequest):
         "scripts": results
     }
 
-# REQUIRED FOR RAILWAY
+
+# RAILWAY STARTUP
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000)
