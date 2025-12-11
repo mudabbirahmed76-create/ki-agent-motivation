@@ -11,18 +11,17 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 class VideoRequest(BaseModel):
     amount: int
     topic: str
-    language: str
+    language: str = "en"
     platforms: List[str]
-
 
 @app.post("/create-motivation-videos")
 def create_videos(request: VideoRequest):
 
     # 1. Generate motivational script
-    prompt = (
-        f"Write a short, powerful motivational script about: {request.topic}. "
-        f"Language: {request.language}."
-    )
+    prompt = f"""
+    Create a short, powerful motivational script about: {request.topic}.
+    Language: {request.language}.
+    """
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -31,8 +30,8 @@ def create_videos(request: VideoRequest):
 
     script_text = response.choices[0].message["content"]
 
-    # 2. Generate motivational image
-    image_prompt = f"Cinematic motivational image based on the topic: {request.topic}"
+    # 2. Generate image
+    image_prompt = f"Cinematic motivational image based on: {request.topic}"
 
     image_response = client.images.generate(
         model="gpt-image-1",
@@ -43,10 +42,10 @@ def create_videos(request: VideoRequest):
     image_base64 = image_response.data[0].b64_json
 
     # 3. Generate motivational video
-    video_prompt = (
-        f"Create a motivational video using this script:\n{script_text}\n"
-        "Use cinematic music and inspiring visuals."
-    )
+    video_prompt = f"""
+    Create a motivational video using this script: {script_text}
+    Use cinematic music and inspiring visuals.
+    """
 
     video_response = client.videos.generate(
         model="gpt-4o-mini-vid",
