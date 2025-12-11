@@ -15,9 +15,9 @@ class VideoRequest(BaseModel):
     platforms: List[str]
 
 MOTIVATION_TOPICS = [
-    "strength", "discipline", "success", "never give up", "mindset",
-    "growth", "courage", "ambition", "healing", "winning mentality",
-    "self confidence", "overcoming fear", "patience", "focus"
+    "discipline", "success", "never give up", "mindset", "strength",
+    "courage", "motivation", "transformation", "winning mentality",
+    "self-confidence", "overcoming fear", "patience", "focus"
 ]
 
 @app.post("/create-motivation-videos")
@@ -43,7 +43,7 @@ def create_videos(request: VideoRequest):
 
         script_text = chat.choices[0].message["content"]
 
-        # 3. Create image for video
+        # 3. Create image
         image_prompt = f"Cinematic motivational scene representing: {topic}"
 
         img = client.images.generate(
@@ -69,7 +69,7 @@ def create_videos(request: VideoRequest):
 
         video_base64 = video.data[0].b64_json
 
-        # 5. Append result for this video
+        # 5. Save result
         results.append({
             "topic": topic,
             "script": script_text,
