@@ -7,91 +7,102 @@ import random
 
 app = FastAPI()
 
-# Root endpoint for Railway health check
+# Simple health check so Railway knows the app is running
 @app.get("/")
 def home():
     return {"status": "running"}
 
+# OpenAI client (reads your key from Railway env variable OPENAI_API_KEY)
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-class VideoRequest(BaseModel):
-    amount: int
-    language: str
-    platforms: List[str]
 
+class VideoRequest(BaseModel):
+    amount: int          # how many scripts you want
+    language: str        # "en", "de", ...
+    platforms: List[str] # ["youtube", "tiktok", "instagram"]
+
+
+# Random motivation topics
 MOTIVATION_TOPICS = [
-    "strength", "discipline", "success", "never give up",
-    "mindset", "growth", "courage", "ambition",
-    "transformation", "winning mentality",
-    "self-confidence", "overcoming fear",
-    "patience", "focus"
+    "strength",
+    "discipline",
+    "success",
+    "never give up",
+    "mindset",
+    "growth",
+    "courage",
+    "ambition",
+    "transformation",
+    "winning mentality",
+    "self-confidence",
+    "overcoming fear",
+    "patience",
+    "focus",
 ]
+
 
 @app.post("/create-motivation-videos")
 def create_videos(request: VideoRequest):
-
     results = []
 
-    for i in range(request.amount):
+    try:
+        for _ in range(request.amount):
+            # 1. Pick random topic
+            topic = random.choice(MOTIVATION_TOPICS)
 
-        # 1. Pick random topic
-        topic = random.choice(MOTIVATION_TOPICS)
+            # 2. Create motivational script
+            script_prompt = (
+                f"Write a short motivational video script in {request.language}.\n"
+                f"Topic: {topic}.\n"
+                "Length: around 20–30 seconds of spoken text.\n"
+                "Write only the voice-over text, with line breaks for natural pauses.\n"
+                "Do NOT add scene descriptions or camera directions."
+            )
 
-        # 2. Create motivational script
-        script_prompt = (
-            f"Create a powerful motivational video script in {request.language} "
-            f"about the topic: {topic}. Make it emotional, cinematic, and 20 seconds long."
-        )
+            chat = client.chat.completions.create(
+                model="gpt-4.1-mini",   # oder "gpt-4o-mini" falls dein Account das hat
+                messages=[{"role": "user", "content": script_prompt}],
+            )
 
-        chat = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": script_prompt}]
-        )
+            # IMPORTANT: use .message.content (no [\"content\"])
+            script_text = chat.choices[0].message.content
 
-        script_text = chat.choices[0].message["content"]
+            # 3. Create thumbnail image prompt
+            image_prompt = (
+                f"Cinematic motivational scene representing the topic '{topic}'. "
+                "Vertical 9:16, high contrast, dramatic lighting, very inspiring."
+            )
 
-        # 3. Create image
-        image_prompt = f"Cinematic motivational scene representing: {topic}"
+            # 4. Generate image (Base64)
+            image = client.images.generate(
+                model="gpt-image-1",
+                prompt=image_prompt,
+                size="1024x1024",
+            )
 
-        img = client.images.generate(
-            model="gpt-image-1",
-            prompt=image_prompt,
-            size="1024x1024"
-        )
+            image_base64 = image.data[0].b64_json
 
-        image_base64 = img.data[0].b64_json
+            # 5. Collect result for this 'video'
+            results.append(
+                {
+                    "topic": topic,
+                    "script": script_text,
+                    "image_prompt": image_prompt,
+                    "image_base64": image_base64,
+                    "platforms_ready": request.platforms,
+                }
+            )
 
-        # 4. Create video
-        video_prompt = (
-            "Create a motivational video with cinematic visuals and music.\n"
-            f"Use this script:\n{script_text}"
-        )
+        return {
+            "status": "success",
+            "videos_requested": request.amount,
+            "videos_generated": len(results),
+            "videos": results,
+        }
 
-        video = client.videos.generate(
-            model="gpt-4o-mini-vid",
-            prompt=video_prompt,
-            duration=15,
-            size="1080x1920"
-        )
-
-        video_base64 = video.data[0].b64_json
-
-        results.append({
-            "topic": topic,
-            "script": script_text,
-            "image_base64": image_base64,
-            "video_base64": video_base64,
-            "platforms_ready": request.platforms
-        })
-
-    return {
-        "status": "success",
-        "videos_generated": len(results),
-        "videos": results
-    }
-
-
-# Railway startup
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000)
+    except Exception as e:
+        # If something goes wrong, we return a clear error instead of 500 without info
+        return {
+            "status": "error",
+            "message": str(e),
+        }
