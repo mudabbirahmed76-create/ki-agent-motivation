@@ -16,6 +16,8 @@ class VideoRequest(BaseModel):
 
 @app.post("/create-motivation-videos")
 def create_videos(request: VideoRequest):
+
+    # 1. Create motivational script
     prompt = (
         f"Create a motivational script in {request.language} about: {request.topic}. "
         f"Make it short, powerful, emotional, and engaging."
