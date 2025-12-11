@@ -17,25 +17,51 @@ class VideoRequest(BaseModel):
 @app.post("/create-motivation-videos")
 def create_videos(request: VideoRequest):
 
-    # 1. Create motivational script
+    # 1. Generate motivational script
     prompt = (
-        f"Write a powerful, emotional motivational script in {request.language} "
-        f"about the topic: {request.topic}. "
-        f"Make it short, cinematic and highly inspiring."
+        f"Create a motivational script in {request.language} about: {request.topic}. "
+        f"Make it short, powerful, emotional, and engaging."
     )
 
-    response = client.responses.create(
+    response = client.chat.completions.create(
         model="gpt-4o-mini",
-        input=prompt
+        messages=[{"role": "user", "content": prompt}]
     )
 
-    script_text = response.output[0].content[0].text
+    script_text = response.choices[0].message["content"]
 
-    # 2. Build final JSON response
+    # 2. Generate image
+    image_prompt = f"Cinematic motivational image based on: {request.topic}"
+    
+    img = client.images.generate(
+        model="gpt-image-1",
+        prompt=image_prompt,
+        size="1024x1024"
+    )
+
+    image_base64 = img.data[0].b64_json
+
+    # 3. Generate motivational video
+    video_prompt = (
+        f"Create a motivational video using this script:\n{script_text}\n"
+        "Use cinematic music and inspiring visuals."
+    )
+
+    video_response = client.videos.generate(
+        model="gpt-4o-mini-vid",
+        prompt=video_prompt,
+        duration=12,
+        size="1920x1080"
+    )
+
+    video_base64 = video_response.data[0].b64_json
+
+    # 4. Final response
     return {
         "status": "success",
         "script": script_text,
-        "amount": request.amount,
-        "platforms": request.platforms,
-        "message": "AI server successfully reached!"
+        "image_base64": image_base64,
+        "video_base64": video_base64,
+        "message": "Motivational video successfully generated.",
+        "platforms_ready": request.platforms
     }
