@@ -19,17 +19,19 @@ def create_videos(request: VideoRequest):
 
     # 1. Create motivational script
     prompt = (
-        f"Create a motivational script in {request.language} about: {request.topic}. "
-        f"Make it short, powerful, emotional, and engaging."
+        f"Write a powerful, emotional motivational script in {request.language} "
+        f"about the topic: {request.topic}. "
+        f"Make it short, cinematic and highly inspiring."
     )
 
-    response = client.chat.completions.create(
+    response = client.responses.create(
         model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}]
+        input=prompt
     )
 
-    script_text = response.choices[0].message["content"]
+    script_text = response.output[0].content[0].text
 
+    # 2. Build final JSON response
     return {
         "status": "success",
         "script": script_text,
