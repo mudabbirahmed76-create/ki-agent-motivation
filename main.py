@@ -22,7 +22,7 @@ def create_videos(request: VideoRequest):
     # 1. Generate motivational script
     prompt = (
         f"Create a short, powerful motivational script about: {request.topic}. "
-        f"Language: {request.language}."
+        f"Language: en."
     )
     response = client.chat.completions.create(
         model="gpt-4o-mini",
