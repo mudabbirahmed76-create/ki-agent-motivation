@@ -7,6 +7,11 @@ import random
 
 app = FastAPI()
 
+# Root endpoint for Railway health check
+@app.get("/")
+def home():
+    return {"status": "running"}
+
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 class VideoRequest(BaseModel):
@@ -32,7 +37,7 @@ def create_videos(request: VideoRequest):
         # 1. Pick random topic
         topic = random.choice(MOTIVATION_TOPICS)
 
-        # 2. Create script
+        # 2. Create motivational script
         script_prompt = (
             f"Create a powerful motivational video script in {request.language} "
             f"about the topic: {topic}. Make it emotional, cinematic, and 20 seconds long."
@@ -58,7 +63,7 @@ def create_videos(request: VideoRequest):
 
         # 4. Create video
         video_prompt = (
-            "Create a motivational video with cinematic visuals and music. "
+            "Create a motivational video with cinematic visuals and music.\n"
             f"Use this script:\n{script_text}"
         )
 
@@ -71,7 +76,6 @@ def create_videos(request: VideoRequest):
 
         video_base64 = video.data[0].b64_json
 
-        # 5. Append result
         results.append({
             "topic": topic,
             "script": script_text,
@@ -87,7 +91,7 @@ def create_videos(request: VideoRequest):
     }
 
 
-# REQUIRED FOR RAILWAY!!!!
+# Railway startup
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000)
