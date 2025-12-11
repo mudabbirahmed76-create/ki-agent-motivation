@@ -2,8 +2,6 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
 from openai import OpenAI
-import requests
-import base64
 import os
 
 app = FastAPI()
@@ -16,28 +14,33 @@ class VideoRequest(BaseModel):
     language: str
     platforms: List[str]
 
+
 @app.post("/create-motivation-videos")
 def create_videos(request: VideoRequest):
 
     # 1. Generate motivational script
     prompt = (
-        f"Create a short, powerful motivational script about: {request.topic}. "
-        f"Language: en."
+        f"Write a short, powerful motivational script about: {request.topic}. "
+        f"Language: {request.language}."
     )
+
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}]
     )
+
     script_text = response.choices[0].message["content"]
 
-    # 2. Generate image
-    image_prompt = f"Cinematic motivational image based on: {request.topic}"
-    img = client.images.generate(
+    # 2. Generate motivational image
+    image_prompt = f"Cinematic motivational image based on the topic: {request.topic}"
+
+    image_response = client.images.generate(
         model="gpt-image-1",
         prompt=image_prompt,
         size="1024x1024"
     )
-    image_base64 = img.data[0].b64_json
+
+    image_base64 = image_response.data[0].b64_json
 
     # 3. Generate motivational video
     video_prompt = (
