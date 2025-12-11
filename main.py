@@ -5,24 +5,20 @@ from openai import OpenAI
 import os
 import random
 
-# Initialize FastAPI
 app = FastAPI()
 
-# Root endpoint for Railway health check
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# HEALTH CHECK für Railway
 @app.get("/")
 def home():
     return {"status": "running"}
 
-# OpenAI client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-# Request model
-class ScriptRequest(BaseModel):
+class VideoRequest(BaseModel):
     amount: int
     language: str
     platforms: List[str]
 
-# Motivational topic pool
 MOTIVATION_TOPICS = [
     "strength", "discipline", "success", "never give up",
     "mindset", "growth", "courage", "ambition",
@@ -32,20 +28,16 @@ MOTIVATION_TOPICS = [
 ]
 
 @app.post("/create-scripts")
-def create_scripts(request: ScriptRequest):
-
+def create_scripts(request: VideoRequest):
     results = []
 
-    for _ in range(request.amount):
-
-        # 1. Pick random topic
+    for i in range(request.amount):
         topic = random.choice(MOTIVATION_TOPICS)
 
-        # 2. Generate script text
         prompt = (
-            f"Create a powerful motivational video script in {request.language} "
-            f"about the topic: {topic}. "
-            f"Make it emotional, cinematic, and 20 seconds long."
+            f"Write a powerful motivational script about '{topic}' in "
+            f"{request.language}. Make it emotional and cinematic. "
+            f"Length: 20 seconds."
         )
 
         chat = client.chat.completions.create(
@@ -55,7 +47,6 @@ def create_scripts(request: ScriptRequest):
 
         script_text = chat.choices[0].message["content"]
 
-        # 3. Save result
         results.append({
             "topic": topic,
             "script": script_text,
@@ -69,7 +60,7 @@ def create_scripts(request: ScriptRequest):
     }
 
 
-# Railway Startup
+# Railway Start
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000)
+    uvicorn.run("main:app", host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
