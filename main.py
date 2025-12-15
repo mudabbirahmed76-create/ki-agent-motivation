@@ -1,30 +1,38 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
-from openai import OpenAI
 import os
 import random
+from openai import OpenAI
 
 app = FastAPI()
-
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+# ---------- REQUEST MODEL ----------
 class ScriptRequest(BaseModel):
     amount: int
-    language: str
     platforms: List[str]
 
+# ---------- TOPICS ----------
 MOTIVATION_TOPICS = [
-    "strength", "discipline", "success", "never give up", "mindset",
-    "growth", "courage", "ambition", "transformation",
-    "winning mentality", "self-confidence", "overcoming fear",
-    "patience", "focus"
+    "discipline",
+    "self confidence",
+    "never give up",
+    "success mindset",
+    "hard work",
+    "focus",
+    "mental strength",
+    "growth",
+    "winning mentality",
+    "overcoming fear"
 ]
 
+# ---------- HEALTH CHECK ----------
 @app.get("/")
-def health():
+def root():
     return {"status": "running"}
 
+# ---------- SCRIPT GENERATOR ----------
 @app.post("/create-motivation-scripts")
 def create_scripts(request: ScriptRequest):
     results = []
@@ -33,17 +41,18 @@ def create_scripts(request: ScriptRequest):
         topic = random.choice(MOTIVATION_TOPICS)
 
         prompt = (
-            f"Create a powerful motivational script in {request.language} "
-            f"about the topic: {topic}. "
-            f"Length: 20-30 seconds. Emotional, cinematic style."
+            f"Write a powerful motivational video script in ENGLISH.\n"
+            f"Topic: {topic}\n"
+            f"Length: 20–30 seconds.\n"
+            f"Style: emotional, cinematic, strong hook, short sentences."
         )
 
-        completion = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}]
+        response = client.responses.create(
+            model="gpt-4.1-mini",
+            input=prompt
         )
 
-        script_text = completion.choices[0].message.content
+        script_text = response.output_text
 
         results.append({
             "topic": topic,
@@ -57,7 +66,7 @@ def create_scripts(request: ScriptRequest):
         "scripts": results
     }
 
-# Required for Railway
+# ---------- REQUIRED FOR RAILWAY ----------
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)
