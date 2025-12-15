@@ -1,54 +1,47 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
-from openai import OpenAI
 import os
 import random
+from openai import OpenAI
 
 app = FastAPI()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Health check for Railway
 @app.get("/")
 def home():
     return {"status": "running"}
 
-# Request model
 class ScriptRequest(BaseModel):
     amount: int
     language: str
     platforms: List[str]
 
-# Topics
 MOTIVATION_TOPICS = [
-    "strength", "discipline", "success", "never give up", "mindset",
-    "growth", "courage", "ambition", "transformation",
-    "winning mentality", "self-confidence", "overcoming fear",
-    "patience", "focus"
+    "discipline", "success", "never give up", "mindset",
+    "confidence", "focus", "growth", "winning mentality"
 ]
 
 @app.post("/create-motivation-scripts")
 def create_scripts(request: ScriptRequest):
-
     results = []
 
     for _ in range(request.amount):
-
         topic = random.choice(MOTIVATION_TOPICS)
 
         prompt = (
-            f"Create a powerful motivational script in {request.language} "
-            f"about the topic: {topic}. "
-            f"Length: 20-30 seconds. Emotional, cinematic style."
+            f"Create a powerful motivational script in {request.language}. "
+            f"Topic: {topic}. "
+            f"Length: 20–30 seconds. Emotional, cinematic."
         )
 
-        completion = client.chat.completions.create(
+        response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}]
         )
 
-        script_text = completion.choices[0].message["content"]
+        script_text = response.choices[0].message.content  # ✅ RICHTIG
 
         results.append({
             "topic": topic,
@@ -61,8 +54,3 @@ def create_scripts(request: ScriptRequest):
         "scripts_generated": len(results),
         "scripts": results
     }
-
-# Railway startup (required)
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000)
