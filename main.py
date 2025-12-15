@@ -1,17 +1,13 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
+from openai import OpenAI
 import os
 import random
-from openai import OpenAI
 
 app = FastAPI()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-@app.get("/")
-def home():
-    return {"status": "running"}
 
 class ScriptRequest(BaseModel):
     amount: int
@@ -19,9 +15,15 @@ class ScriptRequest(BaseModel):
     platforms: List[str]
 
 MOTIVATION_TOPICS = [
-    "discipline", "success", "never give up", "mindset",
-    "confidence", "focus", "growth", "winning mentality"
+    "strength", "discipline", "success", "never give up", "mindset",
+    "growth", "courage", "ambition", "transformation",
+    "winning mentality", "self-confidence", "overcoming fear",
+    "patience", "focus"
 ]
+
+@app.get("/")
+def health():
+    return {"status": "running"}
 
 @app.post("/create-motivation-scripts")
 def create_scripts(request: ScriptRequest):
@@ -31,17 +33,17 @@ def create_scripts(request: ScriptRequest):
         topic = random.choice(MOTIVATION_TOPICS)
 
         prompt = (
-            f"Create a powerful motivational script in {request.language}. "
-            f"Topic: {topic}. "
-            f"Length: 20–30 seconds. Emotional, cinematic."
+            f"Create a powerful motivational script in {request.language} "
+            f"about the topic: {topic}. "
+            f"Length: 20-30 seconds. Emotional, cinematic style."
         )
 
-        response = client.chat.completions.create(
+        completion = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}]
         )
 
-        script_text = response.choices[0].message.content  # ✅ RICHTIG
+        script_text = completion.choices[0].message.content
 
         results.append({
             "topic": topic,
@@ -54,3 +56,8 @@ def create_scripts(request: ScriptRequest):
         "scripts_generated": len(results),
         "scripts": results
     }
+
+# Required for Railway
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
